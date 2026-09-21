@@ -30,6 +30,8 @@ def upsert_energy_consumption(raw_conn, df: pd.DataFrame) -> int:
         return 0
 
     # Convert DataFrame to a list of tuples for efficient batch insertion.
+    # Select columns explicitly so the tuple order matches the INSERT column list.
+    df = df[["country_code", "time_stamp", "consumption_mw"]]
     records = list(df.itertuples(index=False, name=None))
     
     # Define the parameterized SQL query for batch UPSERT.
@@ -64,9 +66,11 @@ def upsert_energy_production(raw_conn, df: pd.DataFrame) -> int:
     if df.empty:
         log.warning("Production DataFrame is empty. Skipping upsert.")
         return 0
-        
+
+    # Select columns explicitly so the tuple order matches the INSERT column list.
+    df = df[["country_code", "time_stamp", "source_type", "production_mw"]]
     records = list(df.itertuples(index=False, name=None))
-    
+
     # SQL query for batch UPSERT into the production table.
     sql = """
         INSERT INTO energy_production (country_code, time_stamp, source_type, production_mw)
@@ -97,9 +101,11 @@ def upsert_cross_border_flow(raw_conn, df: pd.DataFrame) -> int:
     if df.empty:
         log.warning("Cross-border flow DataFrame is empty. Skipping upsert.")
         return 0
-        
+
+    # Select columns explicitly so the tuple order matches the INSERT column list.
+    df = df[["from_country_code", "to_country_code", "time_stamp", "flow_mw"]]
     records = list(df.itertuples(index=False, name=None))
-    
+
     # SQL query for batch UPSERT into the cross_border_flow table.
     sql = """
         INSERT INTO cross_border_flow (from_country_code, to_country_code, time_stamp, flow_mw)
