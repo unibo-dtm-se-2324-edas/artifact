@@ -39,7 +39,6 @@ It supports:
 .
 ├── .github/workflows/
 │   ├── check.yml           # Full CI: syntax, linting (mypy), unit tests, coverage
-│   ├── ci.yml              # Simplified CI: syntax + unit tests
 │   └── deploy.yml          # Automated release pipeline (optional; semantic-release)
 │
 ├── scripts/

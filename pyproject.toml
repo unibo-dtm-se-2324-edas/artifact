@@ -28,6 +28,7 @@ pytest = "^8.2.2"
 loguru = "^0.7.3"
 types-requests = "^2.32.4.20250913"
 types-pyyaml = "^6.0.12.20250915"
+pytest-cov = "^7.1.0"
 
 [tool.poe.tasks]
 test = "python -m unittest discover -v -s tests -p '*.py'"

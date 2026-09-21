@@ -9,6 +9,7 @@ from entsoe import EntsoePandasClient
 # ENTSOE_API_KEY is sensitive data handled via config.
 from edas.config import ENTSOE_API_KEY, TZ_EUROPE
 
+
 # Initialize logger for this module (good practice for debugging/monitoring in CI/CD).
 log = logging.getLogger(__name__)
 

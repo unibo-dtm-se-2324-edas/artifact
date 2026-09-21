@@ -1,5 +1,6 @@
 import argparse
 from dotenv import load_dotenv
+from edas.logging_config import setup_logging
 
 def ingest_main():
     """
@@ -8,6 +9,8 @@ def ingest_main():
     Parses command-line arguments for mode, date range, and countries,
     then calls the main pipeline orchestrator.
     """
+    setup_logging("INFO")
+    
     # Load environment variables (like DB_USER, ENTSOE_API_KEY) from .env file
     load_dotenv()
 
