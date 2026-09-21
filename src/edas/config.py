@@ -27,3 +27,11 @@ ENTSOE_API_KEY: Final[str] = _raw_key or ""
 
 # Define the default timezone for ENTSO-E data (which uses CET/Brussels time)
 TZ_EUROPE: Final[str] = "Europe/Brussels"
+
+
+def debug_enabled() -> bool:
+    """
+    Reads EDAS_DEBUG from the environment. Defaults to False (safe) when
+    unset. Accepts "1", "true", "yes" (case-insensitive) as truthy.
+    """
+    return os.environ.get("EDAS_DEBUG", "").strip().lower() in ("1", "true", "yes")

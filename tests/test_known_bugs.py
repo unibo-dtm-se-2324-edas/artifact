@@ -12,6 +12,7 @@ from unittest.mock import patch, MagicMock
 import pandas as pd
 
 from edas.dashboard import queries
+from edas.db.connection import get_engine
 from edas.ingestion import entsoe_client
 
 
@@ -125,6 +126,83 @@ class TestKnownBugs(unittest.TestCase):
             list(result.columns),
             ["country_code", "time_stamp", "source_type", "production_mw"],
         )
+
+    # BUG 3 (config): connection.py's get_engine() requires DB_HOST, DB_PORT,
+    # DB_USER, DB_PASSWORD and DB_NAME, but .env.example (and db_init.sh)
+    # document PGHOST, PGPORT, PGUSER, PGPASSWORD and PGDATABASE. Anyone who
+    # follows .env.example cannot run the project.
+    def test_env_example_defines_all_vars_required_by_get_engine(self):
+        # --- Arrange ---
+        # Parse variable names (left side of KEY=value) from .env.example.
+        env_example = os.path.join(
+            os.path.dirname(__file__), "..", ".env.example"
+        )
+        documented = set()
+        with open(env_example, encoding="utf-8") as f:
+            for line in f:
+                line = line.strip()
+                if not line or line.startswith("#") or "=" not in line:
+                    continue
+                documented.add(line.split("=", 1)[0].strip())
+
+        # --- Act ---
+        # Discover the required variables behaviourally, so the test survives
+        # changes to how get_engine() stores its list: start from an empty
+        # environment and supply each variable it reports as missing until it
+        # succeeds.
+        supplied = {}
+        with patch.dict(os.environ, {}, clear=True):
+            for _ in range(50):
+                os.environ.update(supplied)
+                try:
+                    get_engine()
+                    break
+                except EnvironmentError as exc:
+                    match = re.search(r":\s*(\w+)\s*$", str(exc))
+                    self.assertIsNotNone(
+                        match, f"Cannot parse missing variable from: {exc}"
+                    )
+                    supplied[match.group(1)] = "1"
+            else:
+                self.fail("get_engine() kept reporting missing variables")
+        required = set(supplied)
+
+        # --- Assert ---
+        missing = required - documented
+        self.assertFalse(
+            missing,
+            f".env.example does not define variables required by "
+            f"get_engine(): {sorted(missing)}",
+        )
+
+    # BUG 4 (security): cli.py's dashboard_main() and app.py's __main__ block
+    # hardcode debug=True for the Dash dev server. Werkzeug's debug console
+    # allows arbitrary code execution if the app is exposed beyond localhost,
+    # and there is no way to control it via environment variable. Expects a
+    # config.debug_enabled() that reads EDAS_DEBUG and defaults to False.
+    def test_debug_mode_defaults_to_false_and_is_configurable(self):
+        from edas.config import debug_enabled
+
+        with patch.dict(os.environ, {}, clear=True):
+            self.assertFalse(debug_enabled())
+
+        with patch.dict(os.environ, {"EDAS_DEBUG": "true"}, clear=True):
+            self.assertTrue(debug_enabled())
+
+        with patch.dict(os.environ, {"EDAS_DEBUG": "0"}, clear=True):
+            self.assertFalse(debug_enabled())
+
+    # BUG 4b (security): proves cli.dashboard_main() actually passes
+    # debug_enabled() to app.run() instead of still hardcoding debug=True.
+    def test_dashboard_main_passes_debug_enabled_to_app_run(self):
+        from edas import cli as cli_module
+
+        with patch("edas.dashboard.app.app") as mock_app, \
+             patch.dict(os.environ, {"EDAS_DEBUG": "true"}, clear=True):
+            cli_module.dashboard_main()
+            mock_app.run.assert_called_once()
+            _, kwargs = mock_app.run.call_args
+            self.assertTrue(kwargs.get("debug"))
 
 
 if __name__ == "__main__":

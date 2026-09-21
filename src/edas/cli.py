@@ -62,6 +62,7 @@ def dashboard_main():
     """
     # Import the configured Dash app instance from the dashboard module
     from edas.dashboard.app import app
-    
-    # Run the Dash development server
-    app.run(host="127.0.0.1", port=8050, debug=True)
+    from edas.config import debug_enabled
+
+    # Run the Dash development server (debug mode is opt-in via EDAS_DEBUG)
+    app.run(host="127.0.0.1", port=8050, debug=debug_enabled())

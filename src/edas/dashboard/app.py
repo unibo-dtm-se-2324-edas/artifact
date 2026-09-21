@@ -322,4 +322,5 @@ def render_tab(tab, countries, start_date, end_date):
 
 # Standard Python entry point to run the app in debug mode
 if __name__ == "__main__":
-    app.run(debug=True)
+    from edas.config import debug_enabled
+    app.run(debug=debug_enabled())
