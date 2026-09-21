@@ -77,9 +77,14 @@ def fetch_consumption(country_code: str, zone_key: str, start: pd.Timestamp, end
     """
     log.info("Load consumption %s (%s) %s → %s", country_code, zone_key, start, end)
     
-    # Query load data using the Entsoe client
-    s = client.query_load(zone_key, start=start, end=end)
-    
+    try:
+        # Query load data using the Entsoe client
+        s = client.query_load(zone_key, start=start, end=end)
+    except Exception as e:
+        # Log a warning if the API call fails (e.g., due to missing data)
+        log.warning("Load API error %s (%s): %s", country_code, zone_key, str(e))
+        return pd.DataFrame(columns=["country_code", "time_stamp", "consumption_mw"])
+
     # Handle cases where no data is returned or the series is empty
     if s is None or s.empty:
         # Return an empty DataFrame with expected columns (standard output format)
@@ -111,9 +116,14 @@ def fetch_production(country_code: str, zone_key: str, start: pd.Timestamp, end:
     """
     log.info("Load generation %s (%s) %s → %s", country_code, zone_key, start, end)
     
-    # Query generation data without filtering by specific Pseudo-Source Type (psr_type=None)
-    df = client.query_generation(zone_key, start=start, end=end, psr_type=None)
-    
+    try:
+        # Query generation data without filtering by specific Pseudo-Source Type (psr_type=None)
+        df = client.query_generation(zone_key, start=start, end=end, psr_type=None)
+    except Exception as e:
+        # Log a warning if the API call fails (e.g., due to missing data)
+        log.warning("Generation API error %s (%s): %s", country_code, zone_key, str(e))
+        return pd.DataFrame(columns=["country_code", "time_stamp", "source_type", "production_mw"])
+
     # Handle cases where no data is returned
     if df is None or len(df) == 0:
         return pd.DataFrame(columns=["country_code", "time_stamp", "source_type", "production_mw"])

@@ -250,13 +250,19 @@ def daily_summary(
     with engine_factory().connect() as conn:
         df = pd.read_sql(
             """
-            SELECT 
+            SELECT
                 date_trunc('day', c.time_stamp) AS day,
                 SUM(c.consumption_mw) AS total_consumption,
                 SUM(p.production_mw) AS total_production,
                 SUM(p.production_mw) - SUM(c.consumption_mw) AS net_balance
             FROM energy_consumption c
-            JOIN energy_production p
+            JOIN (
+                -- Pre-aggregate to (country_code, time_stamp) so the join
+                -- does not fan out consumption rows per source_type.
+                SELECT country_code, time_stamp, SUM(production_mw) AS production_mw
+                FROM energy_production
+                GROUP BY country_code, time_stamp
+            ) p
               ON c.time_stamp = p.time_stamp AND c.country_code = p.country_code
             WHERE c.country_code = ANY(%(countries)s)
               AND c.time_stamp BETWEEN %(start)s AND %(end)s
