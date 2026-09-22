@@ -7,8 +7,7 @@ sys.path.append(os.path.join(os.path.dirname(__file__), "..", "src"))
 import unittest
 import pandas as pd
 
-# Import the specific function to be tested (System Under Test - SUT)
-from edas.pipeline import _compute_range  
+from edas.pipeline import _compute_range
 
 class TestComputeRange(unittest.TestCase):
     """
@@ -29,11 +28,9 @@ class TestComputeRange(unittest.TestCase):
         expected_start = expected_end - pd.Timedelta(days=10)
 
         # --- Act ---
-        # Call the function being tested
         start, end = _compute_range("last_10_days")
 
         # --- Assert ---
-        # Verify that the calculated start and end times match the expected values
         self.assertEqual(start, expected_start)
         self.assertEqual(end, expected_end)
 
@@ -51,7 +48,6 @@ class TestComputeRange(unittest.TestCase):
         start, end = _compute_range("full_2025")
 
         # --- Assert ---
-        # Check if the function's output matches the expected strings
         self.assertEqual(str(start), expected_start_str)
         self.assertEqual(str(end),   expected_end_str)
 
@@ -61,11 +57,9 @@ class TestComputeRange(unittest.TestCase):
         when an unsupported mode is provided.
         """
         # --- Act & Assert ---
-        # Use assertRaises as a context manager to confirm a ValueError is thrown
         with self.assertRaises(ValueError):
             _compute_range("unsupported_mode")
 
 
 if __name__ == "__main__":
-    # Standard entry point to run the tests directly from the file
     unittest.main()

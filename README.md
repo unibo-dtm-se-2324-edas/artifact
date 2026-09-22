@@ -42,13 +42,13 @@ It supports:
 │   └── deploy.yml          # Automated release pipeline (optional; semantic-release)
 │
 ├── scripts/
-│   ├──db_init.sh           # Initialize PostgreSQL schema
-│   ├──ingest.py            # CLI entrypoint for ETL (modes: full_2025 | last_10_days)
-│   
+│   └── db_init.sh          # Initialize PostgreSQL schema
 │
 ├── src/edas/
 │   ├── __init__.py
+│   ├── cli.py              # Packaged CLI entrypoints (edas-ingest, edas-dashboard)
 │   ├── config.py           # Reads DB config & ENTSOE token from environment (.env)
+│   ├── logging_config.py   # Root logger setup (console + rotating file handler)
 │   ├── pipeline.py         # Main orchestration of ETL workflow
 │   │
 │   ├── db/
@@ -66,7 +66,12 @@ It supports:
 │       └── app.py          # Dash UI with KPI cards + tabs (time series, mix, flows, tables)
 │
 ├── tests/
-│   └── test_smoke.py       # Basic smoke test for CI validation
+│   ├── test_dashboard_smoke.py    # Dash layout smoke test
+│   ├── test_pipeline_smoke.py     # run_pipeline orchestration smoke test
+│   ├── test_pipeline_unit.py      # _compute_range unit tests
+│   ├── test_known_bugs.py         # Regression tests for previously fixed bugs
+│   ├── test_upsert.py             # Upsert column-order regression tests
+│   └── test_queries_coverage.py   # Coverage tests for dashboard query functions
 │
 ├── .env                    # Environment variables (not tracked in Git)
 ├── .env.example            # Example configuration file
@@ -102,6 +107,7 @@ DB_HOST=localhost
 DB_PORT=5432
 DB_NAME=energy_analytics
 ENTSOE_API_KEY=your_entsoe_token
+EDAS_DEBUG=false
 ```
 
 Initialize schema:
@@ -114,18 +120,18 @@ bash scripts/db_init.sh
 
 ## Data Ingestion
 
-Run data ingestion via the CLI tool:
+Run data ingestion via the packaged CLI command:
 
 **Last 10 days (default):**
 
 ```bash
-poetry run python scripts/ingest.py --countries FR DE
+poetry run edas-ingest --countries FR DE
 ```
 
 **Full year 2025:**
 
 ```bash
-poetry run python scripts/ingest.py --mode full_2025 --countries FR DE
+poetry run edas-ingest --mode full_2025 --countries FR DE
 ```
 
 ---
@@ -159,7 +165,6 @@ Tests are automatically executed in GitHub Actions on every push or pull request
 ## CI/CD Integration
 
 * **check.yml** → Comprehensive CI (syntax, linting, unit tests, coverage)
-* **ci.yml** → Lightweight CI for quick checks
 * **deploy.yml** → Optional release automation
 
 ---
@@ -167,7 +172,7 @@ Tests are automatically executed in GitHub Actions on every push or pull request
 ## Versioning & Releases
 
 Uses Semantic Versioning (SemVer) via commit messages following the [Conventional Commits](https://www.conventionalcommits.org/) standard.
-Automatic release to PyPI is triggered upon merging into `main`.
+Automatic release to PyPI is triggered upon merging into `master`.
 
 ---
 

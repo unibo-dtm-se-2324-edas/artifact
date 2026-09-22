@@ -1,13 +1,9 @@
--- Create the 'countries' lookup table
--- This table stores static reference data for countries involved in the data analysis.
 CREATE TABLE IF NOT EXISTS countries (
     country_code VARCHAR(2) PRIMARY KEY, -- ISO 3166-1 alpha-2 code
     country_name VARCHAR(50) NOT NULL,
     zone_key VARCHAR(16) NOT NULL        -- ENTSO-E specific zone identifier
 );
 
--- Create the 'energy_production' table
--- This table stores time-series data for energy generation, broken down by source.
 CREATE TABLE IF NOT EXISTS energy_production (
     production_id SERIAL PRIMARY KEY,
     country_code VARCHAR(2) NOT NULL,
@@ -19,8 +15,6 @@ CREATE TABLE IF NOT EXISTS energy_production (
     UNIQUE (country_code, time_stamp, source_type)
 );
 
--- Create the 'energy_consumption' table 
--- This table stores aggregated time-series data for total energy load.
 CREATE TABLE IF NOT EXISTS energy_consumption (
     consumption_id SERIAL PRIMARY KEY,
     country_code VARCHAR(2) NOT NULL REFERENCES countries(country_code),
@@ -31,8 +25,6 @@ CREATE TABLE IF NOT EXISTS energy_consumption (
     UNIQUE (country_code, time_stamp)
 );
 
--- Create the 'cross_border_flow' table 
--- This table stores time-series data for electricity flow between two countries.
 CREATE TABLE IF NOT EXISTS cross_border_flow (
     flow_id SERIAL PRIMARY KEY,
     from_country_code VARCHAR(2) NOT NULL REFERENCES countries(country_code),

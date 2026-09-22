@@ -2,9 +2,7 @@ import pandas as pd
 from typing import Iterable, Tuple, Callable
 from sqlalchemy.engine import Engine
 
-# Define a Type Hint for the engine factory.
-# This pattern (Dependency Injection) makes testing easier
-# as we can pass a mock engine factory.
+# engine_factory is injected so tests can fake the DB.
 EngineFactory = Callable[[], Engine]
 
 
@@ -25,7 +23,6 @@ def consumption_vs_production(
     """
     countries_t = _as_tuple(countries)
     with engine_factory().connect() as conn:
-        # Query 1: Get total consumption aggregated by timestamp
         cons = pd.read_sql(
             """
             SELECT time_stamp, SUM(consumption_mw) AS consumption_mw
@@ -38,7 +35,6 @@ def consumption_vs_production(
             conn,
             params={"countries": list(countries_t), "start": start, "end": end},
         )
-        # Query 2: Get total production aggregated by timestamp
         prod = pd.read_sql(
             """
             SELECT time_stamp, SUM(production_mw) AS production_mw
@@ -51,7 +47,6 @@ def consumption_vs_production(
             conn,
             params={"countries": list(countries_t), "start": start, "end": end},
         )
-    # Merge consumption and production data on the timestamp
     df = pd.merge(cons, prod, on="time_stamp", how="outer").sort_values("time_stamp")
     return df
 
@@ -68,7 +63,6 @@ def kpis(
     """
     countries_t = _as_tuple(countries)
     with engine_factory().connect() as conn:
-        # Fetch raw consumption time-series for averaging
         cons = pd.read_sql(
             """
             SELECT time_stamp, SUM(consumption_mw) AS consumption_mw
@@ -80,7 +74,6 @@ def kpis(
             conn,
             params={"countries": list(countries_t), "start": start, "end": end},
         )
-        # Fetch raw production time-series for total
         prod = pd.read_sql(
             """
             SELECT time_stamp, SUM(production_mw) AS production_mw
@@ -92,7 +85,6 @@ def kpis(
             conn,
             params={"countries": list(countries_t), "start": start, "end": end},
         )
-        # Fetch production aggregated by source type for the energy mix pie chart
         mix = pd.read_sql(
             """
             SELECT source_type, SUM(production_mw) AS production_mw
@@ -104,7 +96,6 @@ def kpis(
             conn,
             params={"countries": list(countries_t), "start": start, "end": end},
         )
-        # Fetch total aggregated cross-border flow (Export)
         flows = pd.read_sql(
             """
             SELECT SUM(flow_mw) AS flow_mw
@@ -116,11 +107,9 @@ def kpis(
             params={"countries": list(countries_t), "start": start, "end": end},
         )
 
-    # Calculate Total Consumption and Production
     total_cons = cons["consumption_mw"].sum() if not cons.empty else 0.0
     total_prod = prod["production_mw"].sum() if not prod.empty else 0.0
 
-    # Calculate Average Consumption (Daily, Weekly, Monthly)
     if not cons.empty:
         cons["day"] = pd.to_datetime(cons["time_stamp"]).dt.to_period("D")
         cons["week"] = pd.to_datetime(cons["time_stamp"]).dt.to_period("W")
@@ -131,23 +120,20 @@ def kpis(
     else:
         avg_daily = avg_weekly = avg_monthly = 0.0
 
-    # Calculate Energy Mix Percentages
     if not mix.empty and mix["production_mw"].sum() > 0:
         mix["percent"] = (mix["production_mw"] / mix["production_mw"].sum()) * 100.0
     else:
         mix["percent"] = 0.0
 
-    # Calculate Net Balance (Total Exports)
     net_balance = float(flows.iloc[0, 0]) if not flows.empty else 0.0
 
-    # Return all KPIs as a dictionary
     return {
         "total_consumption": float(total_cons),
         "avg_daily_consumption": float(avg_daily),
         "avg_weekly_consumption": float(avg_weekly),
         "avg_monthly_consumption": float(avg_monthly),
         "total_production": float(total_prod),
-        "energy_mix": mix,  # DataFrame for the pie chart
+        "energy_mix": mix,
         "net_balance": float(net_balance),
     }
 
@@ -230,7 +216,6 @@ def hourly_consumption(
             conn,
             params={"countries": list(countries_t), "start": start, "end": end},
         )
-    # Enrich data with temporal features needed for the heatmap
     df["hour"] = pd.to_datetime(df["time_stamp"]).dt.hour
     df["day"] = pd.to_datetime(df["time_stamp"]).dt.day_name()
     return df

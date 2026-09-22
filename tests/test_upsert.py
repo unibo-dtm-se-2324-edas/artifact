@@ -9,9 +9,8 @@ from edas.ingestion import upsert
 
 
 class TestUpsertColumnOrder(unittest.TestCase):
-    # BUG 5 (upsert.py): upsert_energy_consumption trusts DataFrame column
-    # order instead of explicitly selecting columns to match the INSERT
-    # list, so a differently-ordered DataFrame silently corrupts data.
+    # Regression: upsert_energy_consumption must select columns explicitly
+    # to match the INSERT list, not trust the DataFrame's own column order.
     def test_upsert_energy_consumption_ignores_dataframe_column_order(self):
         # Columns deliberately NOT in (country_code, time_stamp,
         # consumption_mw) order.
@@ -36,7 +35,7 @@ class TestUpsertColumnOrder(unittest.TestCase):
             [("FR", "2025-01-01 10:00:00", 42.0)],
         )
 
-    # BUG 5b (upsert.py): same column-order bug in upsert_energy_production.
+    # Regression: same column-order guarantee for upsert_energy_production.
     def test_upsert_energy_production_ignores_dataframe_column_order(self):
         df = pd.DataFrame([
             {"production_mw": 7.5, "source_type": "Wind", "country_code": "FR", "time_stamp": "2025-01-01 10:00:00"},
@@ -52,7 +51,7 @@ class TestUpsertColumnOrder(unittest.TestCase):
             [("FR", "2025-01-01 10:00:00", "Wind", 7.5)],
         )
 
-    # BUG 5c (upsert.py): same column-order bug in upsert_cross_border_flow.
+    # Regression: same column-order guarantee for upsert_cross_border_flow.
     def test_upsert_cross_border_flow_ignores_dataframe_column_order(self):
         df = pd.DataFrame([
             {"flow_mw": 12.0, "to_country_code": "DE", "from_country_code": "FR", "time_stamp": "2025-01-01 10:00:00"},

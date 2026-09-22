@@ -10,22 +10,12 @@ from typing import Final
 
 from dotenv import load_dotenv
 
-# Load environment variables from a .env file (if present)
-# This allows for easy configuration in development without setting system variables.
 load_dotenv()
 
-# -----------------------------
-# ENTSO-E API configuration
-# -----------------------------
-
-# Fetch the raw API key string from the environment variables
 _raw_key = os.getenv("ENTSOE_API_KEY")
 
-# Define the API key as a typed Constant (Final) for use in other modules.
-# Fallback to an empty string if the environment variable is not set.
 ENTSOE_API_KEY: Final[str] = _raw_key or ""
 
-# Define the default timezone for ENTSO-E data (which uses CET/Brussels time)
 TZ_EUROPE: Final[str] = "Europe/Brussels"
 
 

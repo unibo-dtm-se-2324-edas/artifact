@@ -41,14 +41,12 @@ def _make_fake_read_sql(db: sqlite3.Connection):
 
 class TestKnownBugs(unittest.TestCase):
     """
-    Regression tests that reproduce known, not-yet-fixed bugs.
-    These are EXPECTED TO FAIL against the current production code.
+    Regression tests for previously fixed bugs.
     """
 
-    # BUG 1 (queries.py, daily_summary): the query JOINs energy_consumption to
-    # raw energy_production rows. energy_production has one row per
-    # (country_code, time_stamp, source_type), so each consumption row is
-    # duplicated once per source_type at that hour, inflating total_consumption.
+    # Regression: daily_summary must not fan out consumption rows when a
+    # country/hour has multiple energy_production source_type rows —
+    # total_consumption has to stay the raw per-hour value, not a multiple of it.
     def test_daily_summary_consumption_not_inflated_by_source_types(self):
         # --- Arrange ---
         # One hour, one country: consumption 100 MW, production from 3 sources.
@@ -81,9 +79,8 @@ class TestKnownBugs(unittest.TestCase):
         self.assertEqual(df.loc[0, "total_production"], 60.0)
         self.assertEqual(df.loc[0, "net_balance"], -40.0)
 
-    # BUG 2 (entsoe_client.py, fetch_consumption): unlike fetch_flow, there is
-    # no try/except around the ENTSO-E API call, so an API error propagates to
-    # the caller instead of yielding an empty DataFrame.
+    # Regression: fetch_consumption must return an empty DataFrame on an
+    # ENTSO-E API error instead of letting the exception propagate.
     def test_fetch_consumption_returns_empty_df_on_api_error(self):
         # --- Arrange ---
         mock_client = MagicMock()
@@ -104,8 +101,8 @@ class TestKnownBugs(unittest.TestCase):
             list(result.columns), ["country_code", "time_stamp", "consumption_mw"]
         )
 
-    # BUG 2b (entsoe_client.py, fetch_production): same missing try/except as
-    # fetch_consumption around client.query_generation.
+    # Regression: fetch_production must return an empty DataFrame on an
+    # ENTSO-E API error instead of letting the exception propagate.
     def test_fetch_production_returns_empty_df_on_api_error(self):
         # --- Arrange ---
         mock_client = MagicMock()
@@ -127,10 +124,9 @@ class TestKnownBugs(unittest.TestCase):
             ["country_code", "time_stamp", "source_type", "production_mw"],
         )
 
-    # BUG 3 (config): connection.py's get_engine() requires DB_HOST, DB_PORT,
-    # DB_USER, DB_PASSWORD and DB_NAME, but .env.example (and db_init.sh)
-    # document PGHOST, PGPORT, PGUSER, PGPASSWORD and PGDATABASE. Anyone who
-    # follows .env.example cannot run the project.
+    # Regression: every environment variable get_engine() requires must also
+    # be documented in .env.example, so following the example file is
+    # actually enough to run the project.
     def test_env_example_defines_all_vars_required_by_get_engine(self):
         # --- Arrange ---
         # Parse variable names (left side of KEY=value) from .env.example.
@@ -175,11 +171,9 @@ class TestKnownBugs(unittest.TestCase):
             f"get_engine(): {sorted(missing)}",
         )
 
-    # BUG 4 (security): cli.py's dashboard_main() and app.py's __main__ block
-    # hardcode debug=True for the Dash dev server. Werkzeug's debug console
-    # allows arbitrary code execution if the app is exposed beyond localhost,
-    # and there is no way to control it via environment variable. Expects a
-    # config.debug_enabled() that reads EDAS_DEBUG and defaults to False.
+    # Regression: the Dash dev server's debug mode must default to off and be
+    # controllable via EDAS_DEBUG — Werkzeug's debug console allows arbitrary
+    # code execution if the app is ever exposed beyond localhost.
     def test_debug_mode_defaults_to_false_and_is_configurable(self):
         from edas.config import debug_enabled
 
@@ -192,8 +186,8 @@ class TestKnownBugs(unittest.TestCase):
         with patch.dict(os.environ, {"EDAS_DEBUG": "0"}, clear=True):
             self.assertFalse(debug_enabled())
 
-    # BUG 4b (security): proves cli.dashboard_main() actually passes
-    # debug_enabled() to app.run() instead of still hardcoding debug=True.
+    # Regression: dashboard_main() must actually pass debug_enabled() to
+    # app.run() rather than still hardcoding debug=True.
     def test_dashboard_main_passes_debug_enabled_to_app_run(self):
         from edas import cli as cli_module
 

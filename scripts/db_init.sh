@@ -1,14 +1,4 @@
 #!/usr/bin/env bash
-# --------------------------------------------------------------------------
-# DATABASE INITIALIZATION SCRIPT (DDL Execution)
-# This script executes the DDL (schema creation) using the psql client.
-# It ensures the database structure is ready before data ingestion (Part 1).
-# --------------------------------------------------------------------------
-
-# Set script to "strict mode"
-# -e: Exit immediately if any command fails.
-# -u: Treat unset variables as an error.
-# -o pipefail: Ensures that a pipeline command fails if any part of it fails.
 set -euo pipefail
 
 # Fail loudly if any required connection variable is missing.
@@ -24,5 +14,4 @@ set -euo pipefail
 # The connection string is built dynamically using environment variables.
 psql "host=${DB_HOST} port=${DB_PORT} user=${DB_USER} dbname=${DB_NAME} password=${DB_PASSWORD}" -f sql/01_schema.sql
 
-# Print a success message to the console upon completion.
 echo "DB initialized with your schema."

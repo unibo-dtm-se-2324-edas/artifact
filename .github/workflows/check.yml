@@ -6,7 +6,6 @@ on:
       - 'renovate/**'
     paths-ignore:
       - '.gitignore'
-      - '.mergify.yml'
       - 'CHANGELOG.md'
       - 'LICENSE'
       - 'README.md'
