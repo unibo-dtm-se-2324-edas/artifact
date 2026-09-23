@@ -13,9 +13,6 @@
     "enabled": true
   },
   "includeForks": true,
-  "ignorePaths": [
-    ".python-version"
-  ],
   "packageRules": [
     {
       "description": "Updates to GitHub Actions should be tagged as 'ci'",

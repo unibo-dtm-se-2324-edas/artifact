@@ -32,10 +32,6 @@ jobs:
             echo "skip=true" >> $GITHUB_OUTPUT
           fi
 
-      - name: Get Python Version
-        id: get-python-version
-        run: echo version=$(python setup.py get_minimum_python_version | tail -n 1) >> $GITHUB_OUTPUT
-
       - name: Install Poetry
         run: |
           python -m pip install --upgrade pip
@@ -43,10 +39,6 @@ jobs:
 
       - name: Restore Development Environment
         run: poetry install
-
-      # Uncomment to change default logging level during release
-      # - name: Change default logging level
-      #   run: sed -i -e 's/logging.DEBUG/logging.WARN/g' **/*/__init__.py
 
       - name: Get Node Version
         id: get-node-version

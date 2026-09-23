@@ -24,11 +24,7 @@ coverage = "^7.4.0"
 mypy = "^1.10.1"
 poethepoet = "^0.37.0"
 poetry = "^1.8.3"
-pytest = "^8.2.2"
-loguru = "^0.7.3"
 types-requests = "^2.32.4.20250913"
-types-pyyaml = "^6.0.12.20250915"
-pytest-cov = "^7.1.0"
 
 [tool.poe.tasks]
 test = "python -m unittest discover -v -s tests -p '*.py'"
